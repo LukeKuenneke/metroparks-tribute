@@ -65,10 +65,20 @@ function cfdShowInfo(data, tabletop) {
 				var marker = new google.maps.Marker({
                     position: {lat: lat, lng: lon},
                     map: cfdTributeMap,
-                    title: elem.MetroPark + " " + elem.Type + ': ' + elem['Location Description']
+                    title: elem.MetroPark + " " + elem.Type + ': ' + elem['Location Description'],
                 });
 
                 marker.elementIndex = cfdData.length - 1;
+
+                var img_html = '';
+
+                if (elem['Photo link'] !== '') {
+                  var file_id = elem['Photo link'].slice(elem['Photo link'].indexOf("=") + 1); // exploiting the fact the file id is the only query parameter
+                  var asset_url = "https://drive.google.com/uc?export=view&id=" + file_id;
+                  img_html = '<a href="'+ asset_url + '" data-lightbox="image-1" data-title="'+elem['Location Description']+'"><img src="' + asset_url + '"" width="64" height="48"></img></a>';
+                }
+
+                var purchase_html = '<a class="blue-btn btn reserve-now" href="tribute-checkout?item='+elem['MetroPark']+elem['Type']+elem['Location Description']+'&price='+elem['Cost']+'">Purchase Now</a>';
 
                 var contentString =
                     '<div class="marker-content">' +
@@ -76,7 +86,9 @@ function cfdShowInfo(data, tabletop) {
                         '<span>' + elem.Cost + '</span><br>' +
                         '<span><strong>' + elem.MetroPark + '</strong></span><br>' +
                         '<span>' + elem['Location Description'] + '</span><br>' +
-                        '<span><strong>Status:</strong> ' + elem.Status + '</span>' +
+                        '<span><strong>Status:</strong> ' + elem.Status + '</span><br>' +
+                        '<div>' + img_html + '</div>' +
+                        '<div>' + purchase_html + '</div>'
                     '</div>';
 
                 marker.infowindow = new google.maps.InfoWindow({
@@ -84,6 +96,9 @@ function cfdShowInfo(data, tabletop) {
                 });
 
                 marker.addListener('click', function() {
+                    for (var i = 0; i < cfdMarkers.length; i++) {
+                      cfdMarkers[i].infowindow.close()
+                    }
                     if (marker.infowindow.map) {
                         marker.infowindow.close();
                     } else {
@@ -116,9 +131,19 @@ function cfdShowInfo(data, tabletop) {
         row.find('.insivia-frmp-list-item-cost').text(elem.Cost);
         row.find('.insivia-frmp-list-item-location-description').html('<strong>Location:</strong> ' + elem['Location Description']);
         row.find('.insivia-frmp-list-item-location-status').html('<strong>Status:</strong> ' + elem.Status);
+        row.find('.insivia-frmp-list-item-reserve-now-wrapper').html('<a class="blue-btn btn reserve-now" href="tribute-checkout?item='+elem['MetroPark']+elem['Type']+elem['Location Description']+'&price='+elem['Cost']+'">Purchase Now</a>');
+        if (elem['Photo link'] !== '') {
+          var file_id = elem['Photo link'].slice(elem['Photo link'].indexOf("=") + 1); // exploiting the fact the file id is the only query parameter
+          var asset_url = "https://drive.google.com/uc?export=view&id=" + file_id;
+          row.find('.insivia-frmp-gallery-link').html('<a href="'+ asset_url + '" data-lightbox="image-1" data-title="'+elem['Location Description']+'"><img src="' + asset_url + '"" width="64" height="48"></img></a>');
+        } else{
+          row.find('.insivia-frmp-gallery-link').remove();
+        }
         row.attr('data-type', elem.Type);
         row.attr('data-park', elem.MetroPark);
-        jQuery('#tribute-searchresults').append(row);
+        if (elem.Status !== 'Taken') {
+          jQuery('#tribute-searchresults').append(row);
+        }
 
     });
 
